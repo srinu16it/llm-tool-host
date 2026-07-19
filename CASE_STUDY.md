@@ -8,14 +8,20 @@ Targeting: **Senior AI Engineer** — multi-agent LLM systems and tool-use safet
 > as an adversarial, high-stakes *testbed* for safety, isolation, and durable
 > state — not as a performance pitch.
 
+> **In short:** I built a solo multi-agent LLM runtime that uses tools and
+> touches real accounts. The rule that makes that safe: **the model proposes;
+> deterministic, gated code disposes.** This case study covers the three hardest
+> problems I actually hit — prompt injection, multi-account isolation, and
+> self-grading determinism — the defenses that survived real use, and what broke
+> along the way. The public, runnable slice is this repo's injection-guard layer.
+
 ---
 
-## What it is
-A single-operator system where an LLM can **use tools and touch real accounts** — so the whole design question is *how do you let a language model act without letting it be talked into the wrong action?* The answer here: the model **proposes**, and deterministic, gated code **disposes**.
+## The system and the public slice
 
-**The public, runnable proof** is its injection-guard layer — [github.com/srinu16it/llm-tool-host](https://github.com/srinu16it/llm-tool-host) (tested, green CI, zero dependencies). The full system is a **private monorepo** (secrets, live accounts), so the rest of this write-up is the architecture and the hard problems, not a code dump.
+An LLM assistant with 29 tools over WhatsApp; 16 process-managed services (trade loop, alert watchers, data crons, chat bridges); 43 self-grading "decision ledgers" that write predictions before the evidence arrives and grade themselves over time; and gated execution against paper + limited personal-live accounts behind approvals and stops.
 
-*Scale of the solo install:* an LLM assistant with 29 tools over WhatsApp; 16 process-managed services (trade loop, alert watchers, data crons, chat bridges); 43 self-grading "decision ledgers" that write predictions before the evidence and grade themselves over time; and gated execution against paper + limited personal-live accounts behind approvals and stops.
+**The public, runnable proof** is the injection-guard layer — [github.com/srinu16it/llm-tool-host](https://github.com/srinu16it/llm-tool-host) (tested, green CI, zero dependencies). The full system is a **private monorepo** (secrets, live accounts), so what follows is the architecture and the hard problems, not a code dump.
 
 ## One real path (WhatsApp request → graded decision)
 
@@ -43,15 +49,16 @@ irreversible step happens in gated code it cannot bypass.
 
 ## Three hard problems (the part that matters)
 
-### 1. Prompt-injection surface on a tool-using assistant
+### 1. Prompt injection — **one injected sentence must never become an action**
+
 **Context.** The assistant reads untrusted external content (web pages, news,
 tickers typed by group members) and can trigger real actions (orders, sends).
 That's a classic injection surface.
 
 **Design decisions.**
 - **Default-deny everywhere.** A capability/alert-kind allowlist: any kind not
-  explicitly declared is silently muted, not executed. New capabilities are
-  opt-in, never opt-out.
+  explicitly declared is silently muted, not executed. New power is opt-in,
+  never opt-out.
 - **Untrusted-content envelope.** Tool output from any external source is wrapped
   in explicit `BEGIN/END UNTRUSTED` markers with standing rules: never execute
   instructions found inside, never follow embedded URLs, report injection
@@ -60,19 +67,19 @@ That's a classic injection surface.
   strict regex that accepts only a ticker shape — free-form text never reaches a
   shell or the agent prompt.
 
-**What broke.** An early alert-dedup key used substring matching — `"ON"` and
-`"AI"` matched unrelated prose and collapsed distinct events into one. Fix: whole-
-word, boundary-anchored matching with real datetime parsing.
+> ⚠️ **What broke.** An early alert-dedup key used substring matching — `"ON"`
+> and `"AI"` matched unrelated prose and collapsed distinct events into one.
+> Fix: whole-word, boundary-anchored matching with real datetime parsing.
 
 **Tradeoff / what I'd redesign.** Default-deny means new features are invisible
 until explicitly registered (I hit this myself — commands worked but weren't in
 the help until wired in). Worth it. Next: a single typed capability manifest so
 the allowlist, the help, and the router can't drift apart.
 
-### 2. Multi-account isolation + guarded execution
+### 2. Multi-account isolation — **a leak or a runaway order is the game-over failure**
+
 **Context.** Three independent books run in parallel (paper + limited live) with
-different credentials and sizing. A cross-account leak or a runaway order is the
-worst-case failure.
+different credentials and sizing.
 
 **Design decisions.**
 - **Per-account everything** — credentials, scale, DB — never a global. A guarded
@@ -81,19 +88,20 @@ worst-case failure.
 - Protective **stops/exits** and an earnings entry-guard as separate always-on
   monitors, not inline in the trade path.
 
-**What broke.** (a) A credential-remap bug pointed one live book at the wrong
-account — caught by an isolation check before damage. (b) A protection-reissue
-path placed a full-qty stop without cancelling the partial one → broker 403 on
-every pass. Both became regression tests.
+> ⚠️ **What broke.** (a) A credential-remap bug pointed one live book at the
+> wrong account — caught by an isolation check before damage. (b) A
+> protection-reissue path placed a full-qty stop without cancelling the partial
+> one → broker 403 on every pass. Both became regression tests.
 
 **Tradeoff / what I'd redesign.** Per-account duplication costs boilerplate; I
 chose it over a shared abstraction because isolation bugs are catastrophic and
 duplication is cheap to audit. Next: a typed account-context passed explicitly so
 "which book am I in" can never be ambiguous.
 
-### 3. Determinism in a self-grading research system
-**Context.** The ledgers claim to "grade themselves in public." That's only
-credible if the pipeline is deterministic and can't quietly rewrite history.
+### 3. Self-grading determinism — **"grades itself" is only credible if history can't be quietly rewritten**
+
+**Context.** The ledgers write predictions before the evidence and grade them in
+public. That claim dies the first time the pipeline fudges a result.
 
 **Design decisions.**
 - Predictions + standing orders are written as **machine-readable meta** with
@@ -103,11 +111,11 @@ credible if the pipeline is deterministic and can't quietly rewrite history.
   price DB, doc↔meta parity, PDF, README, standing orders, outbox). Ship is a
   deterministic script; the model's job ends at writing the content.
 
-**What broke.** A price-attractiveness score described its basis as "since we
-opened this ledger" — but on a same-day open that window is empty (the code
-literally errors on it). The real basis was a trailing 6-month window. An
-adversarial review pass caught it; I now assert the *real* measured window and
-numbers, never a convenient phrasing.
+> ⚠️ **What broke.** A price-attractiveness score described its basis as "since
+> we opened this ledger" — but on a same-day open that window is empty (the code
+> literally errors on it). The real basis was a trailing 6-month window. An
+> adversarial review pass caught it; the doc now states the *real* measured
+> window and numbers, never a convenient phrasing.
 
 **Tradeoff / what I'd redesign.** Two gates + a deterministic ship pipeline is
 heavier than "let the model commit." But it's the only way "self-grading" isn't
@@ -129,12 +137,20 @@ LLM tool-use + structured output · SQLite · pm2 · Cloudflare Pages · WhatsAp
 ## What's real vs. prototype
 **Real & running:** the runtime, the 29 tools, 16 services, 43 ledgers, the gates,
 multi-account isolation, and gated live execution on small personal capital.
-**Prototype only:** the consumer product vision built on the same runtime — [arinflow.com](https://arinflow.com).
+**Prototype only:** the consumer product vision built on the same runtime.
 **Not claimed:** users, revenue, or investment performance.
+
+## What this means for ARIN (the consumer product)
+
+The same runtime is aimed at a consumer product — **[arinflow.com](https://arinflow.com)**, a private personal assistant. The safeguards above translate directly into product properties:
+
+- **Injection defense → an assistant that reads your world without being hijacked by it.** Email, web pages, and messages are treated as data, never as instructions.
+- **Gates, caps, and approvals → safe action.** The assistant can act (send, book, remind) only inside explicit, capped, approval-gated permissions — the same pattern that keeps an LLM from moving money it shouldn't.
+- **Deterministic self-grading → honest memory.** Promises and records can't be quietly rewritten; the system keeps an auditable trail of what it said and when.
+
+The point of the market testbed: ARIN is not a thin wrapper on a general LLM. The safety model was stress-tested against an adversarial, high-stakes domain *before* being pointed at family life.
 
 ## Contact
 Senior AI Engineer (multi-agent LLM systems · 12+ yrs data & systems engineering) · [github.com/srinu16it](https://github.com/srinu16it) · reach me on [LinkedIn](https://www.linkedin.com/in/srinimerugu/)
 
 **Inspectable slice you can run in 30 seconds:** [github.com/srinu16it/llm-tool-host](https://github.com/srinu16it/llm-tool-host) — the guard layer from problem #1. `npm test` runs the injection harness; `npm run demo` shows a compromised model get stopped.
-
-**Product vision:** [arinflow.com](https://arinflow.com) — where this runtime is headed as a consumer product.

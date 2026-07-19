@@ -1,8 +1,14 @@
 # llm-tool-host
 
+[![CI](https://github.com/srinu16it/llm-tool-host/actions/workflows/ci.yml/badge.svg)](https://github.com/srinu16it/llm-tool-host/actions/workflows/ci.yml)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+![license](https://img.shields.io/badge/license-MIT-blue)
+
 **The guard layer that lets an LLM use tools without letting a hostile web page, email, or message hijack it.** Dependency-free, fully tested, runnable in 30 seconds.
 
-This is the prompt-injection defense pattern I run in production inside a 16-service multi-agent system — isolated here so you can read the entire safety argument in one sitting. ([Full case study →](./CASE_STUDY.md))
+This is the **extracted, production-derived safety core** of a larger running system — a 16-service multi-agent runtime I built and operate solo — isolated here so you can read the entire safety argument in one sitting.
+
+**[Full case study →](./CASE_STUDY.md)** · the same runtime principles power **[arinflow.com](https://arinflow.com)**, the consumer product vision built on top.
 
 ```
 npm test      # 10 tests, zero dependencies to install

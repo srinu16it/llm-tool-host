@@ -1,0 +1,14 @@
+{
+  "name": "llm-tool-host",
+  "version": "0.1.0",
+  "description": "A compact, dependency-free reference implementation of the guard layer that keeps an LLM tool-use loop safe against prompt injection.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "demo": "node examples/demo.js"
+  },
+  "keywords": ["llm", "agents", "tool-use", "prompt-injection", "security", "ai"],
+  "author": "Srinivas Merugu",
+  "license": "MIT"
+}

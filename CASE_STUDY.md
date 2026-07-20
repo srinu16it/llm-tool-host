@@ -21,7 +21,7 @@
 
 An LLM assistant with 29 tools over WhatsApp; 16 process-managed services (trade loop, alert watchers, data crons, chat bridges); 43 self-grading "decision ledgers" that write predictions before the evidence arrives and grade themselves over time; and gated execution against paper + limited personal-live accounts behind approvals and stops.
 
-**The public, runnable proof** is the injection-guard layer — [github.com/srinu16it/llm-tool-host](https://github.com/srinu16it/llm-tool-host) (tested, green CI, zero dependencies). The full system is a **private monorepo** (secrets, live accounts), so what follows is the architecture and the hard problems, not a code dump.
+**The public, runnable proof** is the injection-guard layer — [github.com/srinu16it/llm-tool-host](https://github.com/srinu16it/llm-tool-host) (tested, green CI, zero dependencies). The full system is a **private monorepo** (secrets, live accounts), so what follows is the architecture and the hard problems, not a code dump. The whole system, one page: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## One real path (WhatsApp request → graded decision)
 

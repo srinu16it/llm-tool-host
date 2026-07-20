@@ -10,7 +10,7 @@ This is the **extracted, production-derived safety core** of a larger running sy
 
 **[Full case study →](./CASE_STUDY.md)** · the same runtime principles power **[arinflow.com](https://arinflow.com)**, the consumer product vision built on top.
 
-**Docs:** [Getting started](docs/GETTING_STARTED.md) *(60-second path)* · [Concepts](docs/CONCEPTS.md) *(threat model + the four pieces)* · [FAQ](docs/FAQ.md) *(what this does NOT protect against)*
+**Docs:** [Getting started](docs/GETTING_STARTED.md) *(60-second path)* · [Concepts](docs/CONCEPTS.md) *(threat model + the four pieces)* · [FAQ](docs/FAQ.md) *(what this does NOT protect against)* · [Architecture](docs/ARCHITECTURE.md) *(the full system this was extracted from)*
 
 ```
 npm test      # 10 tests, zero dependencies to install — ~2s

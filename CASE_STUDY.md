@@ -1,7 +1,7 @@
 # Building a production-shaped multi-agent AI runtime (solo)
 
 **Srinivas Merugu** · [github.com/srinu16it](https://github.com/srinu16it) · [linkedin.com/in/srinimerugu](https://www.linkedin.com/in/srinimerugu/)
-**Hands-on Principal-level engineer & Data Architect** — multi-agent LLM systems and tool-use safety, built on 12+ years of data engineering in finance. Targeting senior/staff AI-systems roles (IC).
+**Hands-on Principal-level engineer & Data Architect** — multi-agent LLM systems and tool-use safety, built on 12+ years of data engineering in finance.
 
 > **Honest scope.** A solo personal system. Not a shipped product, no external
 > users, and **no trading returns or track record are claimed**. Markets are used
